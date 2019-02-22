@@ -14,15 +14,50 @@ class MoviesController < ApplicationController
     #@movies = Movie.all
     #@sort_column = params[:sort_by]
     #@movies = Movie.order(params[:sort_by])
-    @sort_column = params[:sort_by]
+    #@sort_column = params[:sort_by]
+    #@all_ratings = Movie.get_all_ratings
+    #@set_ratings = params[:ratings]
+    #@movies = Movie.order(params[:sort_by])
+    #puts(params['ratings'])
+    #if params[:ratings]
+    #  @movies = Movie.where(:rating=>params[:ratings].keys).order(params[:sort_by])
+    #else
+    #  @movies = Movie.order(params[:sort_by])
+    #end
+    flag = false
     @all_ratings = Movie.get_all_ratings
-    @set_ratings = params[:ratings]
-    @movies = Movie.order(params[:sort_by])
-    puts(params['ratings'])
-    if params[:ratings]
-      @movies = Movie.where(:rating=>params[:ratings].keys).order(params[:sort_by])
+    @sort_column = params[:sort_by]
+    if @sort_column
+      session[:sort_by] = @sort_column
+    elsif session[:sort_by]
+      @sort_column=session[:sort_by]
+      flag = true
+    end
+    if params[:commit] =='Refresh' and params[:ratings].nil?
+      @set_ratings = nil
+      session[:ratings] = nil
+    elsif params[:ratings]
+      @set_ratings = params[:ratings]
+      session[:ratings] = @set_ratings
+    elsif session[:ratings]
+      @set_ratings = session[:ratings]
+      flag = true
     else
-      @movies = Movie.order(params[:sort_by])
+      @set_ratings = nil
+    end
+    if flag
+      flash.keep
+      puts(@set_ratings)
+      redirect_to(:action=>'index',:sort_by=>@sort_column,:ratings=>@set_ratings)
+    end
+    if @set_ratings and @sort_column
+      @movies = Movie.where(:rating=>@set_ratings.keys).order(@sort_column)
+    elsif @set_ratings
+      @movies = Movie.where(:rating=>params[:ratings].keys)
+    elsif @sort_column
+      @movies = Movie.all.order(params[:sort_by])
+    else
+      @movies = Movie.all
     end
     if !@set_ratings
       @set_ratings = Hash.new(@all_ratings)
